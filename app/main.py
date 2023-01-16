@@ -80,21 +80,19 @@ def create_post(post: schemas.Post, db: Session = Depends(get_db)):
 
 
 @app.delete("/posts/{id:int}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_post(id: int):
-    cursor.execute(
-        """
-        DELETE FROM posts WHERE id=%s RETURNING *
-    """,
-        (id,),
-    )
-    deleted_post = cursor.fetchone()
-    if deleted_post == None:
-        conn.cancel()
+def delete_post(id: int, db: Session = Depends(get_db)):
+
+    post_query: Query = db.query(models.Post).where(models.Post.id == id)
+    post = post_query.first()
+
+    if post == None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"post with id {id} not found!",
         )
-    conn.commit()
+    post_query.delete()
+    db.commit()
+
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
