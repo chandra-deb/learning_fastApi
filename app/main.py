@@ -56,14 +56,9 @@ def get_posts(db: Session = Depends(get_db)):
 
 
 @app.get("/posts/{id:int}")
-def get_post(id: int):
-    cursor.execute(
-        """
-        SELECT * FROM posts WHERE id=%s
-    """,
-        (id,),
-    )
-    post = cursor.fetchone()
+def get_post(id: int, db: Session = Depends(get_db)):
+    post: models.Post = db.query(models.Post).get(id)
+
     if not post:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
