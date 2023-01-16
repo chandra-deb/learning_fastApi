@@ -49,13 +49,8 @@ def root(db: Session = Depends(get_db)):
 
 
 @app.get("/posts")
-def get_posts():
-    cursor.execute(
-        """
-        SELECT * FROM posts
-    """
-    )
-    posts = cursor.fetchall()
+def get_posts(db: Session = Depends(get_db)):
+    posts = db.query(models.Post).all()
 
     return {"posts": posts}
 
