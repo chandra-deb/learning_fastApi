@@ -1,27 +1,21 @@
-import os
 import time
-from fastapi import FastAPI, Response, status, HTTPException
-from pydantic import BaseModel
-import psycopg
-from psycopg.rows import dict_row
-from dotenv import load_dotenv
+from fastapi import FastAPI, Response, status, HTTPException, Depends
 
-load_dotenv()
-
-db_host = os.getenv("host")
-db_name = os.getenv("dbname")
-db_user = os.getenv("user")
-db_password = os.getenv("password")
-
+import psycopg2
+from psycopg2.extras import RealDictCursor
+from .envar import *
+from .database import engine, get_db
+from sqlalchemy.orm import Session, Query
+from . import models, schemas
 
 while True:
     try:
-        conn = psycopg.connect(
+        conn = psycopg2.connect(
             host=db_host,
             dbname=db_name,
             user=db_user,
             password=db_password,
-            row_factory=dict_row,
+            cursor_factory=RealDictCursor,
         )
         cursor = conn.cursor()
         print("Successfully connect")
@@ -32,13 +26,10 @@ while True:
         time.sleep(3)
 
 
+models.Base.metadata.create_all(bind=engine)
+
+
 app = FastAPI()
-
-
-class Post(BaseModel):
-    title: str
-    content: str
-    published: bool = True
 
 
 @app.get("/")
