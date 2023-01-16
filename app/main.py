@@ -42,8 +42,10 @@ class Post(BaseModel):
 
 
 @app.get("/")
-def root():
-    return {"name": "Nothing"}
+def root(db: Session = Depends(get_db)):
+    posts = db.query(models.Post).all()
+
+    return {"name": posts}
 
 
 @app.get("/posts")
