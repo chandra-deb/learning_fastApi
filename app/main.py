@@ -97,23 +97,18 @@ def delete_post(id: int, db: Session = Depends(get_db)):
 
 
 @app.put("/posts/{id:int}")
-def update_post(id: int, post: Post):
-    # index = find_post_index(id)
-    cursor.execute(
-        """
-        UPDATE posts SET title=%s, content=%s, published=%s WHERE id=%s RETURNING *
-    """,
-        (post.title, post.content, post.published, id),
-    )
+def update_post(id: int, updated_post: schemas.Post, db: Session = Depends(get_db)):
 
-    updated_post = cursor.fetchone()
+    post_query: Query = db.query(models.Post).where(models.Post.id == id)
+    post = post_query.first()
 
-    if updated_post == None:
-        conn.cancel()
+    if post == None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"post with id {id} not found!",
         )
-    conn.commit()
+    post_query.update(updated_post.dict())
+    db.commit()
+    db.refresh(post)
 
-    return {"post": updated_post}
+    return {"post": post}
