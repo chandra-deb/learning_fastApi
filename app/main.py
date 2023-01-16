@@ -36,17 +36,17 @@ app = FastAPI()
 def root(db: Session = Depends(get_db)):
     posts = db.query(models.Post).all()
 
-    return {"name": posts}
+    return posts
 
 
-@app.get("/posts")
+@app.get("/posts", response_model=list[schemas.Post])
 def get_posts(db: Session = Depends(get_db)):
-    posts = db.query(models.Post).all()
+    posts: list[models.Post] = db.query(models.Post).all()
 
-    return {"posts": posts}
+    return posts
 
 
-@app.get("/posts/{id:int}")
+@app.get("/posts/{id:int}", response_model=schemas.Post)
 def get_post(id: int, db: Session = Depends(get_db)):
     post: models.Post = db.query(models.Post).get(id)
 
@@ -56,18 +56,18 @@ def get_post(id: int, db: Session = Depends(get_db)):
             detail=f"post with id {id} not found!",
         )
 
-    return {"post": post}
+    return post
 
 
-@app.post("/posts", status_code=status.HTTP_201_CREATED)
-def create_post(post: schemas.Post, db: Session = Depends(get_db)):
+@app.post("/posts", status_code=status.HTTP_201_CREATED, response_model=schemas.Post)
+def create_post(post: schemas.PostCreate, db: Session = Depends(get_db)):
 
     new_post = models.Post(**post.dict())
     db.add(new_post)
     db.commit()
     db.refresh(new_post)
 
-    return {"post": new_post}
+    return new_post
 
 
 @app.delete("/posts/{id:int}", status_code=status.HTTP_204_NO_CONTENT)
@@ -87,8 +87,10 @@ def delete_post(id: int, db: Session = Depends(get_db)):
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@app.put("/posts/{id:int}")
-def update_post(id: int, updated_post: schemas.Post, db: Session = Depends(get_db)):
+@app.put("/posts/{id:int}", response_model=schemas.Post)
+def update_post(
+    id: int, updated_post: schemas.PostCreate, db: Session = Depends(get_db)
+):
 
     post_query: Query = db.query(models.Post).where(models.Post.id == id)
     post = post_query.first()
@@ -102,4 +104,4 @@ def update_post(id: int, updated_post: schemas.Post, db: Session = Depends(get_d
     db.commit()
     db.refresh(post)
 
-    return {"post": post}
+    return post
