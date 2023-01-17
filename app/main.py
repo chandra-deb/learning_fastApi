@@ -1,12 +1,13 @@
 import time
 from fastapi import FastAPI, Response, status, HTTPException, Depends
 
+
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from .envar import *
 from .database import engine, get_db
 from sqlalchemy.orm import Session, Query
-from . import models, schemas
+from . import models, schemas, utils
 
 while True:
     try:
@@ -105,3 +106,16 @@ def update_post(
     db.refresh(post)
 
     return post
+
+
+@app.post("/users", status_code=status.HTTP_201_CREATED, response_model=schemas.UserOut)
+def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
+    hashed_password = utils.hash(user.password)
+    user.password = hashed_password
+
+    new_user = models.User(**user.dict())
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    return new_user
